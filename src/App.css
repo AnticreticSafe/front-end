@@ -25,7 +25,7 @@ code {
 }
 
 .navbar {
-  @apply sticky top-4 z-10 mx-auto mt-4 flex max-w-6xl flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/70 bg-white/60 px-4 py-3 backdrop-blur-md;
+  @apply sticky top-4 z-10 mx-auto mt-4 flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3;
 }
 
 .brand {
@@ -55,7 +55,7 @@ code {
 }
 
 .hero-section {
-  @apply relative overflow-hidden rounded-3xl border border-slate-200/70 bg-white/60 p-10 backdrop-blur-md;
+  @apply relative overflow-hidden py-16 px-4 text-center flex flex-col items-center justify-center;
 }
 
 .chip {
@@ -78,10 +78,10 @@ code {
 .rgb-title {
   background-image: linear-gradient(
     90deg,
-    theme('colors.red.500'),
-    theme('colors.emerald.400'),
-    theme('colors.sky.500'),
-    theme('colors.red.500')
+    theme('colors.blue.500'),
+    theme('colors.indigo.500'),
+    theme('colors.purple.500'),
+    theme('colors.blue.500')
   );
   background-size: 250% 100%;
   -webkit-background-clip: text;
@@ -107,8 +107,8 @@ code {
 }
 
 .btn-primary {
-  @apply bg-gradient-to-r from-indigo-500 to-fuchsia-500 text-white;
-  @apply hover:opacity-95;
+  @apply bg-gradient-to-r from-blue-400 to-purple-500 text-white shadow-lg shadow-purple-500/20 px-8 py-3 rounded-xl text-base font-semibold;
+  @apply hover:opacity-95 hover:shadow-xl transition-all;
 }
 
 .btn-secondary {

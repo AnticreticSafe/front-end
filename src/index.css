@@ -16,7 +16,13 @@
   body {
     margin: 0;
     min-height: 100%;
-    @apply bg-gradient-to-br from-sky-50 via-white to-fuchsia-50 text-slate-900 antialiased;
+    @apply text-slate-900 antialiased;
+    background-color: #fafcff;
+    background-image: 
+      radial-gradient(circle at 10% 20%, rgba(220, 240, 255, 0.8) 0%, transparent 40%),
+      radial-gradient(circle at 90% 10%, rgba(245, 235, 255, 0.8) 0%, transparent 40%),
+      radial-gradient(circle at 50% 80%, rgba(225, 245, 255, 0.6) 0%, transparent 50%);
+    background-attachment: fixed;
   }
 
   #root {

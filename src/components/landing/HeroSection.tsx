@@ -1,5 +1,5 @@
 import { Button } from '../ui/Button'
-import { FiActivity, FiArrowUpRight, FiDollarSign, FiTrendingUp } from 'react-icons/fi'
+import { FiActivity, FiArrowUpRight } from 'react-icons/fi'
 
 interface HeroSectionProps {
   onLaunchDemo: () => void
@@ -8,64 +8,43 @@ interface HeroSectionProps {
 export function HeroSection({ onLaunchDemo }: HeroSectionProps) {
   return (
     <section className="hero-section">
-      <p className="chip">
-        <FiActivity className="h-4 w-4 text-indigo-600" aria-hidden="true" />
-        Web3 Real Estate Infrastructure
+      <p className="chip shadow-sm bg-white border border-slate-100 mb-6">
+        <span className="bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent font-medium">Introducing: Web3 Real Estate Infrastructure</span> 🚀
       </p>
 
-      <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-900 sm:text-6xl">
-        <span className="rgb-title">
-          AnticreticSafe
+      <h1 className="mt-2 text-5xl font-bold tracking-tight text-slate-900 sm:text-7xl">
+        The First Web3
+        <br />
+        <span className="rgb-title leading-tight">
+          Confidential Anticretic Contract
         </span>
       </h1>
 
-      <h3 className="mt-4 max-w-3xl text-lg font-medium text-slate-800 sm:text-xl">
-        Confidential real estate agreement infrastructure powered by Nox and ERC7984.
-      </h3>
-      <p className="mt-3 max-w-3xl text-slate-600">
+      <p className="mt-6 max-w-2xl text-lg text-slate-500">
         Register property-backed occupancy agreements, verify legal milestones through document
         hashes, and protect sensitive financial amounts using confidential smart contracts.
       </p>
-      <div className="hero-actions">
-        <Button onClick={onLaunchDemo}>
-          Launch App <FiArrowUpRight className="h-4 w-4" aria-hidden="true" />
-        </Button>
-        <Button
-          variant="ghost"
-          onClick={() =>
-            document.getElementById('contracts')?.scrollIntoView({ behavior: 'smooth' })
-          }
-        >
-          View Contracts
+      
+      <div className="hero-actions mt-10">
+        <Button onClick={onLaunchDemo} variant="primary">
+          Launch APP
         </Button>
       </div>
 
-      <div className="mt-10 grid gap-4 sm:grid-cols-3">
-        <div className="card">
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-sm font-medium text-slate-600">TVL (demo)</p>
-            <FiDollarSign className="h-5 w-5 text-indigo-600" aria-hidden="true" />
-          </div>
-          <p className="mt-2 text-2xl font-semibold text-slate-900">$0</p>
-          <p className="mt-1 text-sm text-slate-600">Connect wallet to start</p>
+      <div className="mt-24 w-full max-w-5xl grid gap-6 sm:grid-cols-3">
+        <div className="card bg-gradient-to-br from-[#eff6ff] to-white border-[#dbeafe] shadow-sm text-center py-8 rounded-3xl">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Total Value Locked</p>
+          <p className="mt-4 text-4xl font-bold text-slate-900">$342,089,108</p>
         </div>
 
-        <div className="card">
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-sm font-medium text-slate-600">Minted asUSD (demo)</p>
-            <FiActivity className="h-5 w-5 text-indigo-600" aria-hidden="true" />
-          </div>
-          <p className="mt-2 text-2xl font-semibold text-slate-900">0</p>
-          <p className="mt-1 text-sm text-slate-600">Confidential balances supported</p>
+        <div className="card bg-gradient-to-br from-[#fff7ed] to-white border-[#ffedd5] shadow-sm text-center py-8 rounded-3xl">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Total asUSD Minted</p>
+          <p className="mt-4 text-4xl font-bold text-slate-900">342,089,108</p>
         </div>
 
-        <div className="card">
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-sm font-medium text-slate-600">APR (demo)</p>
-            <FiTrendingUp className="h-5 w-5 text-indigo-600" aria-hidden="true" />
-          </div>
-          <p className="mt-2 text-2xl font-semibold text-slate-900">—</p>
-          <p className="mt-1 text-sm text-slate-600">Not calculated yet</p>
+        <div className="card bg-gradient-to-br from-[#faf5ff] to-white border-[#f3e8ff] shadow-sm text-center py-8 rounded-3xl">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Anticretic APY</p>
+          <p className="mt-4 text-4xl font-bold text-slate-900">15%</p>
         </div>
       </div>
     </section>
