@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { arbitrumSepoliaCustom } from '../../config/chains'
+import { ANTICRETIC_SAFE_ADDRESS, LAST_ASUSD_OPERATION_HASH_KEY } from '../../config/contracts'
 import { useNoxEncrypt } from '../../hooks/useNoxEncrypt'
 import { useRegisterConfidentialAmount } from '../../hooks/useRegisterConfidentialAmount'
 import { useWallet } from '../../hooks/useWallet'
@@ -38,7 +39,7 @@ export function RegisterConfidentialAmountPanel() {
   const [errorMessage, setErrorMessage] = useState('')
 
   const wallet = useWallet()
-  const { isEncrypting, encryptAmount } = useNoxEncrypt()
+  const { isEncrypting, encryptUint256Amount } = useNoxEncrypt()
   const { isSubmitting, register } = useRegisterConfidentialAmount()
 
   const isId1OccupantMismatch = useMemo(() => {
@@ -86,7 +87,10 @@ export function RegisterConfidentialAmountPanel() {
     }
     try {
       setPanelStatus('Encrypting amount')
-      const encrypted = await encryptAmount(BigInt(amount))
+      const encrypted = await encryptUint256Amount({
+        amount: BigInt(amount),
+        targetContract: ANTICRETIC_SAFE_ADDRESS,
+      })
       setEncryptedAmountHandle(encrypted.encryptedAmountHandle)
       setInputProof(encrypted.inputProof)
       setPanelStatus('Amount encrypted')
@@ -94,6 +98,17 @@ export function RegisterConfidentialAmountPanel() {
       setPanelStatus('Error')
       setErrorMessage('Nox encryption failed')
     }
+  }
+
+  const onLoadLastAsUSDOperationHash = () => {
+    const lastHash = localStorage.getItem(LAST_ASUSD_OPERATION_HASH_KEY)
+    if (!lastHash) {
+      setErrorMessage('No saved asUSD operation hash found from mint yet.')
+      return
+    }
+    setAsUSDOperationHash(lastHash)
+    setErrorMessage('')
+    setReadyState()
   }
 
   const onRegister = async () => {
@@ -187,6 +202,9 @@ export function RegisterConfidentialAmountPanel() {
         <div className="actions-grid">
           <Button variant="secondary" onClick={onGenerateHash}>
             Generate Mock Operation Hash
+          </Button>
+          <Button variant="secondary" onClick={onLoadLastAsUSDOperationHash}>
+            Load last asUSD operation hash
           </Button>
           <Button variant="secondary" onClick={onEncrypt}>
             {isEncrypting ? 'Encrypting amount...' : 'Encrypt Amount with Nox'}

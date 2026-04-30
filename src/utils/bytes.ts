@@ -1,4 +1,4 @@
-import { isHex, keccak256, toBytes } from 'viem'
+import { isAddress, isHex, keccak256, toBytes } from 'viem'
 
 export const isBytes32 = (value: string): value is `0x${string}` =>
   isHex(value, { strict: true }) && value.length === 66
@@ -15,6 +15,19 @@ export const normalizeBytes32 = (value: string): `0x${string}` => {
   return (`0x${sanitized.slice(2).padStart(64, '0')}`) as `0x${string}`
 }
 
-export const txHashToBytes32 = (txHash: string): `0x${string}` => normalizeBytes32(txHash)
+export const txHashToBytes32 = (txHash: string): `0x${string}` => {
+  if (!isBytes32(txHash)) {
+    throw new Error('Invalid transaction hash. Expected bytes32 hash.')
+  }
+  return txHash
+}
 
 export const stringToMockBytes32 = (value: string): `0x${string}` => keccak256(toBytes(value))
+
+export const shortHash = (hash: string, head = 10, tail = 8) =>
+  hash ? `${hash.slice(0, head)}...${hash.slice(-tail)}` : ''
+
+export const shortAddress = (address: string, head = 6, tail = 4) =>
+  `${address.slice(0, head)}...${address.slice(-tail)}`
+
+export const isAddressLike = (value: string) => isAddress(value)

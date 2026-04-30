@@ -1,7 +1,6 @@
 import { createViemHandleClient } from '@iexec-nox/handle'
 import { useState } from 'react'
 import { useWalletClient } from 'wagmi'
-import { ANTICRETIC_SAFE_ADDRESS } from '../config/contracts'
 
 interface EncryptResult {
   encryptedAmountHandle: `0x${string}`
@@ -12,7 +11,13 @@ export function useNoxEncrypt() {
   const { data: walletClient } = useWalletClient()
   const [isEncrypting, setIsEncrypting] = useState(false)
 
-  const encryptAmount = async (amount: bigint): Promise<EncryptResult> => {
+  const encryptUint256Amount = async ({
+    amount,
+    targetContract,
+  }: {
+    amount: bigint
+    targetContract: `0x${string}`
+  }): Promise<EncryptResult> => {
     if (!walletClient) {
       throw new Error('Wallet client is not available')
     }
@@ -22,7 +27,7 @@ export function useNoxEncrypt() {
       const { handle, handleProof } = await handleClient.encryptInput(
         amount,
         'uint256',
-        ANTICRETIC_SAFE_ADDRESS,
+        targetContract,
       )
       return {
         encryptedAmountHandle: handle as `0x${string}`,
@@ -38,6 +43,6 @@ export function useNoxEncrypt() {
 
   return {
     isEncrypting,
-    encryptAmount,
+    encryptUint256Amount,
   }
 }

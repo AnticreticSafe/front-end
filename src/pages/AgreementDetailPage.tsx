@@ -6,6 +6,8 @@ import { StatusBadge } from '../components/agreements/StatusBadge'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { SectionTitle } from '../components/ui/SectionTitle'
+import { ConfidentialAsUSDBalancePanel } from '../components/web3/ConfidentialAsUSDBalancePanel'
+import { MintConfidentialAsUSDPanel } from '../components/web3/MintConfidentialAsUSDPanel'
 import { RegisterConfidentialAmountPanel } from '../components/web3/RegisterConfidentialAmountPanel'
 import { formatDate, shortenHash } from '../utils/format'
 
@@ -73,6 +75,15 @@ export function AgreementDetailPage({ agreement }: AgreementDetailPageProps) {
         </div>
       </Card>
 
+      <Card>
+        <p className="muted">Step 1: Mint confidential asUSD to the occupant.</p>
+        <p className="muted">
+          Step 2: Use the mint transaction hash as the asUSD operation reference in the agreement.
+        </p>
+      </Card>
+
+      <MintConfidentialAsUSDPanel />
+      <ConfidentialAsUSDBalancePanel />
       <RegisterConfidentialAmountPanel />
     </main>
   )
