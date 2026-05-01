@@ -7,7 +7,6 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-0f172a?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-3.x-0f172a?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 
-Front-end for AnticreticSafe. This README is optimized for judges and automated evaluation agents: it highlights where the important artefacts live, how to run the project, and clarifies that the team migrated to a monolithic layout for delivery speed.
 
 ## Table of Contents
 
