@@ -291,4 +291,5 @@ Explorer: `https://sepolia.arbiscan.io`
 - **ABIs**: [src/abi/anticreticSafeAbi.ts](src/abi/anticreticSafeAbi.ts) and [src/abi/anticreticSafeUsdAbi.ts](src/abi/anticreticSafeUsdAbi.ts)
 - **Contract config**: [src/config/contracts.ts](src/config/contracts.ts)
 - **Chain config**: [src/config/chains.ts](src/config/chains.ts)
+- **iExec Tools Feedback**: See [feedback.md](feedback.md) for detailed notes on Nox SDK integration, friction points, and recommendations for the iExec team
 
