@@ -12,7 +12,7 @@ function App() {
   const [view, setView] = useState<AppView>('landing')
   const [selectedAgreementId, setSelectedAgreementId] = useState('')
 
-  const { agreements, isLoading } = useMyAgreements()
+  const { agreements, isLoading, refetch } = useMyAgreements()
 
   const selectedAgreement = useMemo(
     () => agreements.find((a) => a.id === selectedAgreementId),
@@ -39,7 +39,7 @@ function App() {
       {view === 'create' ? <CreateAgreementPage onCreate={() => setView('dashboard')} /> : null}
 
       {view === 'detail' && selectedAgreement ? (
-        <AgreementDetailPage agreement={selectedAgreement} onBack={() => setView('dashboard')} />
+        <AgreementDetailPage agreement={selectedAgreement} onBack={() => setView('dashboard')} onRefresh={refetch} />
       ) : null}
 
       {view === 'detail' && !selectedAgreement && !isLoading ? (

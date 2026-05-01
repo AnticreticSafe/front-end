@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import type { Agreement, AgreementStatus } from '../types/agreement'
 import { useConnectedRole } from '../hooks/useConnectedRole'
 import { useWallet } from '../hooks/useWallet'
@@ -16,6 +16,7 @@ import {
 interface AgreementDetailPageProps {
   agreement: Agreement
   onBack?: () => void
+  onRefresh?: () => void
 }
 
 // ── Status → index of the currently active step (0-9) ──────────────────
@@ -153,9 +154,10 @@ function DoneAction({ message }: { message: string }) {
 }
 
 // ── File hash action — upload a document, hash is computed automatically ─
-function HashInputAction({ label, buttonLabel, isPending, onSubmit }: {
+function HashInputAction({ label, buttonLabel, isPending, onSubmit, onSuccess }: {
   label: string; placeholder?: string; buttonLabel: string; isPending: boolean;
   onSubmit: (hash: `0x${string}`) => Promise<{ txHash: string } | undefined>;
+  onSuccess?: () => void;
 }) {
   const [fileName, setFileName] = useState('')
   const [computedHash, setComputedHash] = useState<`0x${string}` | ''>('')
@@ -201,7 +203,7 @@ function HashInputAction({ label, buttonLabel, isPending, onSubmit }: {
     if (!computedHash) return
     try {
       const res = await onSubmit(computedHash)
-      if (res) setTxHash(res.txHash)
+      if (res) { setTxHash(res.txHash); onSuccess?.() }
     } catch (e) {
       setErr(parseContractError(e))
     }
@@ -276,9 +278,10 @@ function HashInputAction({ label, buttonLabel, isPending, onSubmit }: {
 }
 
 // ── Simple sign action ──────────────────────────────────────────────────
-function SignAction({ label, sublabel, buttonLabel, isPending, onSubmit }: {
+function SignAction({ label, sublabel, buttonLabel, isPending, onSubmit, onSuccess }: {
   label: string; sublabel?: string; buttonLabel: string; isPending: boolean;
   onSubmit: () => Promise<{ txHash: string } | undefined>;
+  onSuccess?: () => void;
 }) {
   const [txHash, setTxHash] = useState('')
   const [err, setErr] = useState('')
@@ -287,7 +290,7 @@ function SignAction({ label, sublabel, buttonLabel, isPending, onSubmit }: {
     setErr('')
     try {
       const res = await onSubmit()
-      if (res) setTxHash(res.txHash)
+      if (res) { setTxHash(res.txHash); onSuccess?.() }
     } catch (e) {
       setErr(parseContractError(e))
     }
@@ -307,7 +310,7 @@ function SignAction({ label, sublabel, buttonLabel, isPending, onSubmit }: {
 }
 
 // ── Step 5 — Owner: Mint asUSD ──────────────────────────────────────────
-function NoxMintAction({ agreement }: { agreement: Agreement }) {
+function NoxMintAction({ agreement, onSuccess }: { agreement: Agreement; onSuccess?: () => void }) {
   const { isEncrypting, encryptUint256Amount } = useNoxEncrypt()
   const { mintConfidentialAsUSD, isPending, isConfirming, txHash, error } = useMintConfidentialAsUSD()
   const [amount, setAmount] = useState('20000')
@@ -330,7 +333,7 @@ function NoxMintAction({ agreement }: { agreement: Agreement }) {
     if (!handle || !proof) { setLocalErr('Encrypt the amount first'); return }
     try {
       const res = await mintConfidentialAsUSD({ recipient: recipient as `0x${string}`, encryptedAmountHandle: handle, inputProof: proof })
-      if (res?.txHash) localStorage.setItem(LAST_ASUSD_OPERATION_HASH_KEY, res.txHash)
+      if (res?.txHash) { localStorage.setItem(LAST_ASUSD_OPERATION_HASH_KEY, res.txHash); onSuccess?.() }
     } catch (e) { setLocalErr(parseContractError(e)) }
   }
 
@@ -370,7 +373,7 @@ function NoxMintAction({ agreement }: { agreement: Agreement }) {
 }
 
 // ── Step 5 — Occupant: Register amount ─────────────────────────────────
-function NoxRegisterAction({ agreement }: { agreement: Agreement }) {
+function NoxRegisterAction({ agreement, onSuccess }: { agreement: Agreement; onSuccess?: () => void }) {
   const { isEncrypting, encryptUint256Amount } = useNoxEncrypt()
   const { isSubmitting, register } = useRegisterConfidentialAmount()
   const [amount, setAmount] = useState('20000')
@@ -395,7 +398,7 @@ function NoxRegisterAction({ agreement }: { agreement: Agreement }) {
     try {
       const numericId = agreement.id.replace(/\D/g, '')
       const res = await register({ agreementId: numericId, encryptedAmountHandle: handle, inputProof: proof, asUSDOperationHash: opHash as `0x${string}` })
-      if (res?.txHash) setTxHash(res.txHash)
+      if (res?.txHash) { setTxHash(res.txHash); onSuccess?.() }
     } catch (e) { setErr(parseContractError(e)) }
   }
 
@@ -427,12 +430,100 @@ function NoxRegisterAction({ agreement }: { agreement: Agreement }) {
   )
 }
 
+// ── Step 7 — Occupant: Confirm money returned + countdown ───────────────
+function useCountdown(endDateStr: string) {
+  const [timeLeft, setTimeLeft] = useState('')
+  const [isOverdue, setIsOverdue] = useState(false)
+
+  useEffect(() => {
+    // endDateStr format: "DD/MM/YYYY" from tsToDate in useMyAgreements
+    const parts = endDateStr.split('/')
+    let endMs = NaN
+    if (parts.length === 3) {
+      // DD/MM/YYYY → new Date(YYYY, MM-1, DD)
+      endMs = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0])).getTime()
+    }
+    if (isNaN(endMs)) { setTimeLeft('—'); return }
+
+    const tick = () => {
+      const diff = endMs - Date.now()
+      if (diff <= 0) {
+        setIsOverdue(true)
+        setTimeLeft('0d 0h 0m 0s')
+        return
+      }
+      const d = Math.floor(diff / 86_400_000)
+      const h = Math.floor((diff % 86_400_000) / 3_600_000)
+      const m = Math.floor((diff % 3_600_000) / 60_000)
+      const s = Math.floor((diff % 60_000) / 1_000)
+      setTimeLeft(`${d}d ${h}h ${m}m ${s}s`)
+    }
+    tick()
+    const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
+  }, [endDateStr])
+
+  return { timeLeft, isOverdue }
+}
+
+function MoneyReturnAction({ agreement, writer, numericId, onSuccess }: {
+  agreement: Agreement
+  writer: ReturnType<typeof useAgreementWriter>
+  numericId: string
+  onSuccess?: () => void
+}) {
+  const { timeLeft, isOverdue } = useCountdown(agreement.endDate)
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      {/* Countdown card */}
+      <div style={{
+        background: isOverdue ? 'rgba(239,68,68,0.08)' : 'rgba(107,96,242,0.08)',
+        border: `1px solid ${isOverdue ? 'rgba(239,68,68,0.3)' : 'rgba(107,96,242,0.25)'}`,
+        borderRadius: '12px',
+        padding: '16px 20px',
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: '12px',
+        alignItems: 'center',
+      }}>
+        <div>
+          <p style={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: '4px' }}>
+            Agreement end date
+          </p>
+          <p style={{ fontSize: '1rem', fontWeight: 700, color: '#d8fab1', fontFamily: 'Brockmann, Syne, sans-serif' }}>
+            {agreement.endDate}
+          </p>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <p style={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: '4px' }}>
+            {isOverdue ? '⚠ Overdue by' : 'Time remaining'}
+          </p>
+          <p style={{ fontSize: '1rem', fontWeight: 700, fontFamily: 'monospace', color: isOverdue ? '#fca5a5' : '#a5b4fc' }}>
+            {timeLeft}
+          </p>
+        </div>
+      </div>
+
+      <SignAction
+        label="Confirm that the anticrético capital has been returned to you."
+        sublabel="Only confirm once you have actually received the money back."
+        buttonLabel="Confirm Money Returned"
+        isPending={writer.isPending}
+        onSuccess={onSuccess}
+        onSubmit={() => writer.confirmMoneyReturned(numericId)}
+      />
+    </div>
+  )
+}
+
 // ── Step action panel — dispatches per step + role ──────────────────────
-function StepActionPanel({ step, agreement, role, writer }: {
+function StepActionPanel({ step, agreement, role, writer, onRefresh }: {
   step: FlowStep
   agreement: Agreement
   role: string
   writer: ReturnType<typeof useAgreementWriter>
+  onRefresh?: () => void
 }) {
   const numericId = agreement.id.replace(/\D/g, '')
   const isOwner = role === 'PROPERTY_OWNER'
@@ -445,11 +536,13 @@ function StepActionPanel({ step, agreement, role, writer }: {
   }
 
   if (step.index === 1) {
+    if (!isOwner) return <WaitAction message="Waiting for the Property Owner to upload the title report document." />
     return (
       <HashInputAction
         label="Upload the Title Report / Alodial document — the SHA-256 hash is computed automatically"
         buttonLabel="Upload Title Report Hash"
         isPending={writer.isPending}
+        onSuccess={onRefresh}
         onSubmit={hash => writer.uploadTitleReport(numericId, hash)}
       />
     )
@@ -483,41 +576,45 @@ function StepActionPanel({ step, agreement, role, writer }: {
     if (isOwner) {
       return ownerApproved
         ? <WaitingForOther pending="Occupant" addr={agreement.occupant} />
-        : <SignAction label="Review the agreement terms and sign your approval on-chain." sublabel="Both parties must approve before the next step." buttonLabel="Approve Agreement" isPending={writer.isPending} onSubmit={() => writer.approveAgreement(numericId)} />
+        : <SignAction label="Review the agreement terms and sign your approval on-chain." sublabel="Both parties must approve before the next step." buttonLabel="Approve Agreement" isPending={writer.isPending} onSuccess={onRefresh} onSubmit={() => writer.approveAgreement(numericId)} />
     }
     if (isOccupant) {
       return occupantApproved
         ? <WaitingForOther pending="Property Owner" addr={agreement.propertyOwner} />
-        : <SignAction label="Review the agreement terms and sign your approval on-chain." sublabel="Both parties must approve before the next step." buttonLabel="Approve Agreement" isPending={writer.isPending} onSubmit={() => writer.approveAgreement(numericId)} />
+        : <SignAction label="Review the agreement terms and sign your approval on-chain." sublabel="Both parties must approve before the next step." buttonLabel="Approve Agreement" isPending={writer.isPending} onSuccess={onRefresh} onSubmit={() => writer.approveAgreement(numericId)} />
     }
     return <WaitAction message="Waiting for both parties to sign their approval." />
   }
 
   if (step.index === 3) {
+    if (!isOwner) return <WaitAction message="Waiting for the Property Owner to upload the signed contract (Minuta)." />
     return (
       <HashInputAction
         label="Upload the signed contract (Minuta / Contrato de Anticrético) — SHA-256 hash is computed automatically"
         buttonLabel="Upload Contract Hash"
         isPending={writer.isPending}
+        onSuccess={onRefresh}
         onSubmit={hash => writer.uploadAgreementContract(numericId, hash)}
       />
     )
   }
 
   if (step.index === 4) {
+    if (!isOwner) return <WaitAction message="Waiting for the Property Owner to upload the Public Registry / Folio Real proof." />
     return (
       <HashInputAction
         label="Upload the Derechos Reales / Folio Real document — SHA-256 hash is computed automatically"
         buttonLabel="Upload Registry Proof Hash"
         isPending={writer.isPending}
+        onSuccess={onRefresh}
         onSubmit={hash => writer.uploadPublicRegistry(numericId, hash)}
       />
     )
   }
 
   if (step.index === 5) {
-    if (isOwner) return <NoxMintAction agreement={agreement} />
-    if (isOccupant) return <NoxRegisterAction agreement={agreement} />
+    if (isOwner) return <NoxMintAction agreement={agreement} onSuccess={onRefresh} />
+    if (isOccupant) return <NoxRegisterAction agreement={agreement} onSuccess={onRefresh} />
     return <WaitAction message="Confidential finance step — participants only." />
   }
 
@@ -528,6 +625,7 @@ function StepActionPanel({ step, agreement, role, writer }: {
           label="Upload the Possession Delivery Act (Acta de Entrega) — SHA-256 hash is computed automatically"
           buttonLabel="Confirm Delivery + Upload Hash"
           isPending={writer.isPending}
+          onSuccess={onRefresh}
           onSubmit={hash => writer.confirmPossessionDelivery(numericId, hash)}
         />
       )
@@ -539,6 +637,7 @@ function StepActionPanel({ step, agreement, role, writer }: {
           sublabel="Status becomes Active once both parties confirm."
           buttonLabel="Confirm Possession Received"
           isPending={writer.isPending}
+          onSuccess={onRefresh}
           onSubmit={() => writer.confirmPossessionReceived(numericId)}
         />
       )
@@ -548,15 +647,7 @@ function StepActionPanel({ step, agreement, role, writer }: {
 
   if (step.index === 7) {
     if (isOccupant) {
-      return (
-        <SignAction
-          label="Confirm that the anticrético capital has been returned to you."
-          sublabel="Only confirm once you have actually received the money back."
-          buttonLabel="Confirm Money Returned"
-          isPending={writer.isPending}
-          onSubmit={() => writer.confirmMoneyReturned(numericId)}
-        />
-      )
+      return <MoneyReturnAction agreement={agreement} writer={writer} numericId={numericId} onSuccess={onRefresh} />
     }
     return <WaitAction message="Waiting for Occupant to confirm money was returned." />
   }
@@ -568,6 +659,7 @@ function StepActionPanel({ step, agreement, role, writer }: {
           label="Confirm that the property has been returned and you have full possession again."
           buttonLabel="Confirm Property Returned"
           isPending={writer.isPending}
+          onSuccess={onRefresh}
           onSubmit={() => writer.confirmPropertyReturned(numericId)}
         />
       )
@@ -576,11 +668,13 @@ function StepActionPanel({ step, agreement, role, writer }: {
   }
 
   if (step.index === 9) {
+    if (!isOwner) return <WaitAction message="Waiting for the Property Owner to upload the closure proof and close the agreement." />
     return (
       <HashInputAction
         label="Upload the cancellation / closure proof document (Cancelación) — SHA-256 hash is computed automatically"
         buttonLabel="Close Agreement"
         isPending={writer.isPending}
+        onSuccess={onRefresh}
         onSubmit={hash => writer.closeAgreement(numericId, hash)}
       />
     )
@@ -660,7 +754,7 @@ function FlowTimeline({ steps, doneUpTo, activeIndex, selectedIndex, onSelect, i
 }
 
 // ── Main Page ───────────────────────────────────────────────────────────
-export function AgreementDetailPage({ agreement, onBack }: AgreementDetailPageProps) {
+export function AgreementDetailPage({ agreement, onBack, onRefresh }: AgreementDetailPageProps) {
   const role = useConnectedRole(agreement)
   const wallet = useWallet()
   const writer = useAgreementWriter()
@@ -670,6 +764,12 @@ export function AgreementDetailPage({ agreement, onBack }: AgreementDetailPagePr
   const activeStepIndex = isDisputed ? -1 : STATUS_ACTIVE[agreement.status] ?? 0
   const doneUpTo = isClosed ? 9 : Math.max(activeStepIndex - 1, 0)
   const [selectedIndex, setSelectedIndex] = useState(isClosed ? 9 : Math.max(activeStepIndex, 0))
+
+  // Auto-advance when agreement status changes (after refetch)
+  useEffect(() => {
+    if (!isClosed) setSelectedIndex(Math.max(activeStepIndex, 0))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agreement.status])
 
   const selectedStep = FLOW_STEPS[selectedIndex]!
 
@@ -762,7 +862,7 @@ export function AgreementDetailPage({ agreement, onBack }: AgreementDetailPagePr
               ) : !isClosed && selectedIndex > activeStepIndex ? (
                 <WaitAction message="This step is not yet available. Complete the active step first." />
               ) : (
-                <StepActionPanel step={selectedStep} agreement={agreement} role={role} writer={writer} />
+                <StepActionPanel step={selectedStep} agreement={agreement} role={role} writer={writer} onRefresh={onRefresh} />
               )}
             </div>
 

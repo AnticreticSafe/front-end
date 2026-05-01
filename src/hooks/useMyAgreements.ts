@@ -36,7 +36,7 @@ export function useMyAgreements() {
   const { address, isConnected } = useWallet()
 
   // 1. Total agreement count
-  const { data: counterData, isLoading: counterLoading } = useReadContract({
+  const { data: counterData, isLoading: counterLoading, refetch: refetchCounter } = useReadContract({
     address: ANTICRETIC_SAFE_ADDRESS,
     abi: anticreticSafeAbi,
     functionName: 'agreementCounter',
@@ -55,7 +55,7 @@ export function useMyAgreements() {
       })),
     [count],
   )
-  const { data: coresRaw, isLoading: coresLoading } = useReadContracts({
+  const { data: coresRaw, isLoading: coresLoading, refetch: refetchCores } = useReadContracts({
     contracts: coreContracts,
     query: { enabled: count > 0, staleTime: 0 },
   })
@@ -96,11 +96,11 @@ export function useMyAgreements() {
     [myIds],
   )
 
-  const { data: hashesRaw, isLoading: hashesLoading } = useReadContracts({
+  const { data: hashesRaw, isLoading: hashesLoading, refetch: refetchHashes } = useReadContracts({
     contracts: hashContracts,
     query: { enabled: myIds.length > 0, staleTime: 0 },
   })
-  const { data: approvalsRaw, isLoading: approvalsLoading } = useReadContracts({
+  const { data: approvalsRaw, isLoading: approvalsLoading, refetch: refetchApprovals } = useReadContracts({
     contracts: approvalContracts,
     query: { enabled: myIds.length > 0, staleTime: 0 },
   })
@@ -164,5 +164,12 @@ export function useMyAgreements() {
     coresLoading ||
     (myIds.length > 0 && (hashesLoading || approvalsLoading))
 
-  return { agreements, isLoading }
+  const refetch = () => {
+    void refetchCounter()
+    void refetchCores()
+    void refetchHashes()
+    void refetchApprovals()
+  }
+
+  return { agreements, isLoading, refetch }
 }
