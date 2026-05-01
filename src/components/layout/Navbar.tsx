@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react'
+import { useWallet } from '../../hooks/useWallet'
+import { formatAddress } from '../../utils/formatAddress'
 
 export type AppView = 'landing' | 'dashboard' | 'create' | 'detail'
 
@@ -15,6 +17,7 @@ const NAV_LINKS: { label: string; view: AppView }[] = [
 
 export function Navbar({ activeView, onNavigate }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false)
+  const { isConnected, address, connectWallet, disconnectWallet, isConnecting } = useWallet()
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 60)
@@ -72,27 +75,44 @@ export function Navbar({ activeView, onNavigate }: NavbarProps) {
 
         {/* Actions */}
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => onNavigate('dashboard')}
-            className="hidden rounded-xl border px-4 py-2 text-sm font-medium transition-all duration-200 md:block"
-            style={{
-              borderColor: 'rgba(107,96,242,0.4)',
-              color: 'rgba(255,255,255,0.8)',
-            }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#6b60f2'; (e.currentTarget as HTMLButtonElement).style.color = '#fff' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(107,96,242,0.4)'; (e.currentTarget as HTMLButtonElement).style.color = 'rgba(255,255,255,0.8)' }}
-          >
-            Sign in
-          </button>
-          <button
-            type="button"
-            onClick={() => onNavigate('dashboard')}
-            className="rounded-xl px-5 py-2.5 text-sm font-semibold transition-opacity duration-200 hover:opacity-90"
-            style={{ background: '#d8fab1', color: '#221a4c' }}
-          >
-            Launch App
-          </button>
+          {isConnected ? (
+            <div className="flex items-center gap-2">
+              <div
+                className="hidden sm:flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium"
+                style={{
+                  background: 'rgba(107,96,242,0.15)',
+                  border: '1px solid rgba(107,96,242,0.3)',
+                  color: '#d8fab1',
+                }}
+              >
+                <span className="h-2 w-2 rounded-full" style={{ background: '#d8fab1', display: 'inline-block' }} />
+                {address ? formatAddress(address) : 'Connected'}
+              </div>
+              <button
+                type="button"
+                onClick={() => disconnectWallet()}
+                className="rounded-xl px-4 py-2 text-sm font-medium transition-colors"
+                style={{
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  color: 'rgba(255,255,255,0.6)',
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#fff' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'rgba(255,255,255,0.6)' }}
+              >
+                Disconnect
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={connectWallet}
+              disabled={isConnecting}
+              className="rounded-xl px-5 py-2.5 text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"
+              style={{ background: '#d8fab1', color: '#221a4c' }}
+            >
+              {isConnecting ? 'Connecting…' : 'Connect Wallet'}
+            </button>
+          )}
         </div>
       </div>
     </nav>
