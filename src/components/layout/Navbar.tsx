@@ -1,5 +1,4 @@
-import { Button } from '../ui/Button'
-import { FiShield } from 'react-icons/fi'
+import { useState, useEffect } from 'react'
 
 export type AppView = 'landing' | 'dashboard' | 'create' | 'detail'
 
@@ -8,33 +7,94 @@ interface NavbarProps {
   onNavigate: (view: AppView) => void
 }
 
+const NAV_LINKS: { label: string; view: AppView }[] = [
+  { label: 'Features', view: 'landing' },
+  { label: 'Dashboard', view: 'dashboard' },
+  { label: 'New Agreement', view: 'create' },
+]
+
 export function Navbar({ activeView, onNavigate }: NavbarProps) {
+  const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 60)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
   return (
-    <nav className="navbar">
-      <button type="button" className="brand" onClick={() => onNavigate('landing')}>
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center shadow-md">
-          <FiShield className="h-5 w-5 text-white" aria-hidden="true" />
-        </div>
-        <span className="text-xl font-bold ml-1 tracking-tight">AnticreticSafe</span>
-      </button>
-      <div className="nav-links">
-        {(['landing', 'dashboard', 'create', 'detail'] as AppView[]).map((view) => (
-          <button
-            key={view}
-            type="button"
-            className={`nav-link ${activeView === view ? 'is-active' : ''}`}
-            onClick={() => onNavigate(view)}
+    <nav
+      className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
+      style={{
+        background: scrolled ? 'rgba(34,26,76,0.97)' : 'transparent',
+        backdropFilter: scrolled ? 'blur(16px)' : 'none',
+        borderBottom: scrolled ? '1px solid rgba(107,96,242,0.2)' : 'none',
+      }}
+    >
+      <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-6">
+        {/* Brand */}
+        <button
+          type="button"
+          onClick={() => onNavigate('landing')}
+          className="flex items-center gap-2.5 focus:outline-none"
+        >
+          <div
+            className="flex h-8 w-8 items-center justify-center rounded-lg"
+            style={{ background: 'linear-gradient(135deg, #6b60f2, #d8fab1)' }}
           >
-            {view === 'landing' && 'Landing'}
-            {view === 'dashboard' && 'Dashboard'}
-            {view === 'create' && 'Create'}
-            {view === 'detail' && 'Detail'}
+            <svg className="h-4 w-4 text-pb-navy" fill="none" stroke="#221a4c" viewBox="0 0 24 24" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+            </svg>
+          </div>
+          <span className="text-base font-bold tracking-tight text-white font-brockmann">
+            Anticretic<span style={{ color: '#d8fab1' }}>Safe</span>
+          </span>
+        </button>
+
+        {/* Nav links */}
+        <div className="hidden items-center gap-1 md:flex">
+          {NAV_LINKS.map(({ label, view }) => (
+            <button
+              key={view}
+              type="button"
+              onClick={() => onNavigate(view)}
+              className="rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200"
+              style={{
+                color: activeView === view ? '#d8fab1' : 'rgba(255,255,255,0.75)',
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#d8fab1' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = activeView === view ? '#d8fab1' : 'rgba(255,255,255,0.75)' }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => onNavigate('dashboard')}
+            className="hidden rounded-xl border px-4 py-2 text-sm font-medium transition-all duration-200 md:block"
+            style={{
+              borderColor: 'rgba(107,96,242,0.4)',
+              color: 'rgba(255,255,255,0.8)',
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#6b60f2'; (e.currentTarget as HTMLButtonElement).style.color = '#fff' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(107,96,242,0.4)'; (e.currentTarget as HTMLButtonElement).style.color = 'rgba(255,255,255,0.8)' }}
+          >
+            Sign in
           </button>
-        ))}
+          <button
+            type="button"
+            onClick={() => onNavigate('dashboard')}
+            className="rounded-xl px-5 py-2.5 text-sm font-semibold transition-opacity duration-200 hover:opacity-90"
+            style={{ background: '#d8fab1', color: '#221a4c' }}
+          >
+            Launch App
+          </button>
+        </div>
       </div>
-      <Button variant="secondary" onClick={() => onNavigate('dashboard')} className="rounded-xl px-5 py-2 font-medium">
-        Launch APP
-      </Button>
     </nav>
   )
 }
