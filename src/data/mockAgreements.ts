@@ -1,22 +1,23 @@
 import type { Agreement } from '../types/agreement'
+import { TOKEN_OWNER_ADDRESS, DEFAULT_OCCUPANT_ADDRESS } from '../config/contracts'
 
 export const mockAgreements: Agreement[] = [
   {
     id: 'AS-0001',
-    propertyOwner: '0xAb12...9fA1',
-    occupant: '0x91Ef...42Bc',
+    propertyOwner: '0xaBcD1234567890AbCdEf1234567890abcdef1234',
+    occupant: '0x9876543210fedcba9876543210fedcba98765432',
     propertyHash: '0x9d7b7340ca3f2db1f2ddac8f7f5e7432b3f8f901f4f93a2ef10536f8ab8930ee',
     titleReportHash: '0x2e7c6ab5e9a4ef2f774f7de6f4108d4ebda84d58bc1f37d61e3c9ef3d7bc89c0',
     agreementContractHash: '0x6ac18e5da66517ef7df0d45bde89fb1f5957ed69f8086aeebdb8b5b6717cb6ac',
     publicRegistryProofHash: '0x7b91a5c0f8ec349e4c8bca8a2dcd42bf8d2d163ca2fe23bbd39ff4dfe64e1962',
     possessionDeliveryHash: '0x4ec9f67f5a6df2ddb38ce1a4f64a335bc7ca6f6f16d32f43d2990d286286fb86',
-    closureProofHash: '',
+    closureProofHash: '0xa1b2c3d4e5f607182930a4b5c6d7e8f901234567890123456789012345678901',
     asUSDOperationHash: '0x1159b04c5a113f3098e5fdb3160538f24ec98074fa91f62867f7d7b2b058467b',
     amountRegistered: true,
     confidentialAmountLabel: '20,000 asUSD',
-    startDate: '2026-04-10',
-    endDate: '2027-04-10',
-    status: 'Active',
+    startDate: '2025-04-10',
+    endDate: '2026-04-10',
+    status: 'Closed',
     approvals: {
       propertyOwnerApproved: true,
       occupantApproved: true,
@@ -24,8 +25,8 @@ export const mockAgreements: Agreement[] = [
   },
   {
     id: 'AS-0002',
-    propertyOwner: '0xC8aa...8DD4',
-    occupant: '0xf314...0A12',
+    propertyOwner: TOKEN_OWNER_ADDRESS,
+    occupant: DEFAULT_OCCUPANT_ADDRESS,
     propertyHash: '0x8a4ccf8f01deaf9b71ed51c9db7b5eb7f22d5e52fed4284ea66f6ab98fdbfed0',
     titleReportHash: '0x32f6be814ec1cf57b052d0f32cd5cfced2d08f2f3db8f1f70755af77ee6a9a01',
     agreementContractHash: '',
@@ -45,8 +46,8 @@ export const mockAgreements: Agreement[] = [
   },
   {
     id: 'AS-0003',
-    propertyOwner: '0x1D41...BE09',
-    occupant: '0x3ac0...77e1',
+    propertyOwner: '0x1111222233334444555566667777888899990000',
+    occupant: '0xAAAABBBBCCCCDDDDEEEEFFFF0000111122223333',
     propertyHash: '0x0e7a3e4424fbd1d377236c7773910839c3f9fd23eb55aa2bdbd56522b8db7f62',
     titleReportHash: '',
     agreementContractHash: '',

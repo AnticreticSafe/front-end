@@ -1,5 +1,5 @@
 import { Button } from '../ui/Button'
-import { FiArrowUpRight, FiShield } from 'react-icons/fi'
+import { FiShield } from 'react-icons/fi'
 
 export type AppView = 'landing' | 'dashboard' | 'create' | 'detail'
 

@@ -1,5 +1,4 @@
 import { Button } from '../ui/Button'
-import { FiActivity, FiArrowUpRight } from 'react-icons/fi'
 
 interface HeroSectionProps {
   onLaunchDemo: () => void

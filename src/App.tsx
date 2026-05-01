@@ -41,7 +41,7 @@ function App() {
       {view === 'create' ? <CreateAgreementPage onCreate={() => setView('dashboard')} /> : null}
 
       {view === 'detail' && selectedAgreement ? (
-        <AgreementDetailPage agreement={selectedAgreement} />
+        <AgreementDetailPage agreement={selectedAgreement} onBack={() => setView('dashboard')} />
       ) : null}
 
       <Footer />

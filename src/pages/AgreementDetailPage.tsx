@@ -1,90 +1,73 @@
+import { useState } from 'react'
 import type { Agreement } from '../types/agreement'
-import { AgreementTimeline } from '../components/agreements/AgreementTimeline'
-import { ConfidentialAmountCard } from '../components/agreements/ConfidentialAmountCard'
-import { DocumentHashList } from '../components/agreements/DocumentHashList'
-import { StatusBadge } from '../components/agreements/StatusBadge'
-import { Button } from '../components/ui/Button'
-import { Card } from '../components/ui/Card'
-import { SectionTitle } from '../components/ui/SectionTitle'
-import { ConfidentialAsUSDBalancePanel } from '../components/web3/ConfidentialAsUSDBalancePanel'
-import { MintConfidentialAsUSDPanel } from '../components/web3/MintConfidentialAsUSDPanel'
-import { RegisterConfidentialAmountPanel } from '../components/web3/RegisterConfidentialAmountPanel'
-import { formatDate, shortenHash } from '../utils/format'
+import { useConnectedRole } from '../hooks/useConnectedRole'
+import { useNextAction } from '../hooks/useNextAction'
+import { AgreementHeader } from '../components/agreement/AgreementHeader'
+import { AgreementProgressStepper } from '../components/agreement/AgreementProgressStepper'
+import { NextActionCard } from '../components/agreement/NextActionCard'
+import { AgreementTabs } from '../components/agreement/AgreementTabs'
+import type { TabId } from '../components/agreement/AgreementTabs'
 
 interface AgreementDetailPageProps {
   agreement: Agreement
+  onBack?: () => void
 }
 
-export function AgreementDetailPage({ agreement }: AgreementDetailPageProps) {
-  const actions = [
-    'Upload Title Report Hash',
-    'Approve Agreement',
-    'Upload Agreement Contract Hash',
-    'Upload Public Registry Proof Hash',
-    'Register Confidential Amount',
-    'Confirm Possession Delivery',
-    'Close Agreement',
-  ]
+export function AgreementDetailPage({ agreement, onBack }: AgreementDetailPageProps) {
+  const role = useConnectedRole(agreement)
+  const nextAction = useNextAction(
+    agreement.status,
+    role,
+    agreement.approvals,
+    agreement.asUSDOperationHash,
+  )
+
+  const [pendingTab, setPendingTab] = useState<TabId | undefined>(undefined)
+
+  const handleNextAction = () => {
+    if (nextAction.actionType === 'go_to_finance') {
+      setPendingTab('finance')
+    }
+  }
 
   return (
-    <main className="page">
-      <SectionTitle kicker="Agreement Detail" title={agreement.id} />
-      <div className="detail-grid">
-        <Card>
-          <div className="agreement-card-head">
-            <h3>State</h3>
-            <StatusBadge status={agreement.status} />
-          </div>
-          <p>
-            <strong>Property Owner:</strong> {agreement.propertyOwner}
-          </p>
-          <p>
-            <strong>Occupant:</strong> {agreement.occupant}
-          </p>
-          <p>
-            <strong>Start Date:</strong> {formatDate(agreement.startDate)}
-          </p>
-          <p>
-            <strong>End Date:</strong> {formatDate(agreement.endDate)}
-          </p>
-          <p>
-            <strong>Property Hash:</strong> <code>{shortenHash(agreement.propertyHash)}</code>
-          </p>
-        </Card>
-        <ConfidentialAmountCard
-          isAuthorized={agreement.amountRegistered}
-          amountLabel={agreement.confidentialAmountLabel}
-        />
+    <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 grid gap-6">
+      {/* Back button */}
+      {onBack && (
+        <button
+          type="button"
+          onClick={onBack}
+          className="inline-flex w-fit items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-900 transition"
+        >
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to Dashboard
+        </button>
+      )}
+
+      {/* Agreement Header */}
+      <AgreementHeader agreement={agreement} role={role} />
+
+      {/* Progress Stepper */}
+      <div className="rounded-2xl border border-slate-200/70 bg-white/80 p-5 backdrop-blur-md shadow-sm overflow-hidden">
+        <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-slate-400">
+          Agreement Progress
+        </h2>
+        <AgreementProgressStepper currentStatus={agreement.status} />
       </div>
 
-      <Card>
-        <h3>Agreement timeline</h3>
-        <AgreementTimeline currentStatus={agreement.status} />
-      </Card>
+      {/* Next Action Card */}
+      <NextActionCard action={nextAction} onAction={handleNextAction} />
 
-      <DocumentHashList agreement={agreement} />
-
-      <Card>
-        <h3>Mock actions</h3>
-        <div className="actions-grid">
-          {actions.map((action) => (
-            <Button key={action} variant="secondary">
-              {action}
-            </Button>
-          ))}
-        </div>
-      </Card>
-
-      <Card>
-        <p className="muted">Step 1: Mint confidential asUSD to the occupant.</p>
-        <p className="muted">
-          Step 2: Use the mint transaction hash as the asUSD operation reference in the agreement.
-        </p>
-      </Card>
-
-      <MintConfidentialAsUSDPanel />
-      <ConfidentialAsUSDBalancePanel />
-      <RegisterConfidentialAmountPanel />
+      {/* Tabs */}
+      <div className="rounded-2xl border border-slate-200/70 bg-white/80 p-6 backdrop-blur-md shadow-sm">
+        <AgreementTabs
+          agreement={agreement}
+          role={role}
+          initialTab={pendingTab}
+        />
+      </div>
     </main>
   )
 }

@@ -1,6 +1,5 @@
 import type { Agreement } from '../types/agreement'
-import { AgreementCard } from '../components/agreements/AgreementCard'
-import { SectionTitle } from '../components/ui/SectionTitle'
+import { RoleDashboard } from '../components/dashboard/RoleDashboard'
 
 interface DashboardPageProps {
   agreements: Agreement[]
@@ -9,17 +8,8 @@ interface DashboardPageProps {
 
 export function DashboardPage({ agreements, onViewDetails }: DashboardPageProps) {
   return (
-    <main className="page">
-      <SectionTitle
-        kicker="Dashboard"
-        title="Mock agreements"
-        description="Tracking real-estate agreements with verifiable milestones and confidential amount states."
-      />
-      <div className="grid-3">
-        {agreements.map((agreement) => (
-          <AgreementCard key={agreement.id} agreement={agreement} onViewDetails={onViewDetails} />
-        ))}
-      </div>
+    <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+      <RoleDashboard agreements={agreements} onViewDetails={onViewDetails} />
     </main>
   )
 }
