@@ -3,8 +3,6 @@ import type { UserRole } from '../../hooks/useConnectedRole'
 import { useWallet } from '../../hooks/useWallet'
 import { AgreementSummaryCard } from './AgreementSummaryCard'
 import { DashboardStats } from './DashboardStats'
-import { WalletConnectButton } from '../web3/WalletConnectButton'
-
 interface RoleDashboardProps {
   agreements: Agreement[]
   onViewDetails: (id: string) => void
@@ -38,27 +36,36 @@ function getRoleForAgreement(address: string, agreement: Agreement): UserRole {
 
 function DisconnectedView({ onConnect, isConnecting }: { onConnect: () => void; isConnecting: boolean }) {
   return (
-    <div className="flex flex-col items-center justify-center py-24 text-center">
-      <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-indigo-100 to-purple-100">
-        <svg className="h-10 w-10 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '96px 24px', textAlign: 'center' }}>
+      <div style={{
+        width: '80px', height: '80px', borderRadius: '50%', marginBottom: '24px',
+        background: 'linear-gradient(135deg, rgba(107,96,242,0.3), rgba(216,250,177,0.15))',
+        border: '1px solid rgba(107,96,242,0.3)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <svg style={{ width: '36px', height: '36px', color: '#6b60f2' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
         </svg>
       </div>
-      <h2 className="text-xl font-bold text-slate-900">Connect your wallet</h2>
-      <p className="mt-2 max-w-sm text-sm text-slate-500">
-        Connect your wallet to view your role and manage your real-estate agreements on Arbitrum
-        Sepolia.
+      <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: '#ffffff', fontFamily: 'Brockmann, Syne, sans-serif', marginBottom: '8px' }}>
+        Connect your wallet
+      </h2>
+      <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.45)', maxWidth: '360px', lineHeight: 1.6, marginBottom: '28px' }}>
+        Connect your wallet to view your role and manage your real-estate agreements on Arbitrum Sepolia.
       </p>
-      <div className="mt-6">
-        <button
-          type="button"
-          onClick={onConnect}
-          disabled={isConnecting}
-          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-200/50 hover:opacity-95 transition"
-        >
-          {isConnecting ? 'Connecting...' : 'Connect Wallet'}
-        </button>
-      </div>
+      <button
+        type="button"
+        onClick={onConnect}
+        disabled={isConnecting}
+        style={{
+          borderRadius: '12px', padding: '12px 28px',
+          fontSize: '0.9rem', fontWeight: 600,
+          background: '#d8fab1', color: '#221a4c',
+          border: 'none', cursor: 'pointer', opacity: isConnecting ? 0.6 : 1,
+        }}
+      >
+        {isConnecting ? 'Connecting…' : 'Connect Wallet'}
+      </button>
     </div>
   )
 }
@@ -70,19 +77,13 @@ export function RoleDashboard({ agreements, onViewDetails }: RoleDashboardProps)
     return (
       <div>
         <DisconnectedView onConnect={wallet.connectWallet} isConnecting={wallet.isConnecting} />
-        {/* Still show all agreements for visitors */}
-        <div className="mt-8">
-          <h3 className="mb-4 text-sm font-semibold uppercase tracking-widest text-slate-400">
+        <div style={{ marginTop: '32px' }}>
+          <p style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', marginBottom: '16px' }}>
             Public Agreements
-          </h3>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          </p>
+          <div style={{ display: 'grid', gap: '16px', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
             {agreements.map((agreement) => (
-              <AgreementSummaryCard
-                key={agreement.id}
-                agreement={agreement}
-                role="VIEWER"
-                onViewDetails={onViewDetails}
-              />
+              <AgreementSummaryCard key={agreement.id} agreement={agreement} role="VIEWER" onViewDetails={onViewDetails} />
             ))}
           </div>
         </div>
@@ -144,25 +145,17 @@ export function RoleDashboard({ agreements, onViewDetails }: RoleDashboardProps)
   const header = ROLE_HEADER[dominantRole]
 
   return (
-    <div className="grid gap-8">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
       {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
         <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-indigo-500">
+          <p style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6b60f2', marginBottom: '6px' }}>
             Dashboard
           </p>
-          <h1 className="mt-1 text-2xl font-bold text-slate-900">{header.title}</h1>
-          <p className="mt-1 text-sm text-slate-500">{header.subtitle}</p>
-        </div>
-        <div className="flex-shrink-0">
-          <WalletConnectButton
-            isConnected={wallet.isConnected}
-            address={wallet.address}
-            chainName={wallet.chain?.name}
-            onConnect={wallet.connectWallet}
-            onDisconnect={wallet.disconnectWallet}
-            isConnecting={wallet.isConnecting}
-          />
+          <h1 style={{ fontSize: 'clamp(1.4rem, 3vw, 1.9rem)', fontWeight: 700, color: '#ffffff', fontFamily: 'Brockmann, Syne, sans-serif', lineHeight: 1.2 }}>
+            {header.title}
+          </h1>
+          <p style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.45)', marginTop: '6px' }}>{header.subtitle}</p>
         </div>
       </div>
 
@@ -178,17 +171,12 @@ export function RoleDashboard({ agreements, onViewDetails }: RoleDashboardProps)
       {/* My agreements */}
       {(ownerAgreements.length > 0 || occupantAgreements.length > 0) && (
         <div>
-          <h3 className="mb-4 text-sm font-semibold uppercase tracking-widest text-slate-400">
+          <p style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', marginBottom: '16px' }}>
             Your Agreements
-          </h3>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          </p>
+          <div style={{ display: 'grid', gap: '16px', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
             {[...ownerAgreements, ...occupantAgreements].map(({ agreement, role }) => (
-              <AgreementSummaryCard
-                key={agreement.id}
-                agreement={agreement}
-                role={role}
-                onViewDetails={onViewDetails}
-              />
+              <AgreementSummaryCard key={agreement.id} agreement={agreement} role={role} onViewDetails={onViewDetails} />
             ))}
           </div>
         </div>
@@ -197,17 +185,12 @@ export function RoleDashboard({ agreements, onViewDetails }: RoleDashboardProps)
       {/* Other agreements (viewer) */}
       {viewerAgreements.length > 0 && (
         <div>
-          <h3 className="mb-4 text-sm font-semibold uppercase tracking-widest text-slate-400">
+          <p style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', marginBottom: '16px' }}>
             Other Agreements
-          </h3>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          </p>
+          <div style={{ display: 'grid', gap: '16px', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
             {viewerAgreements.map(({ agreement, role }) => (
-              <AgreementSummaryCard
-                key={agreement.id}
-                agreement={agreement}
-                role={role}
-                onViewDetails={onViewDetails}
-              />
+              <AgreementSummaryCard key={agreement.id} agreement={agreement} role={role} onViewDetails={onViewDetails} />
             ))}
           </div>
         </div>

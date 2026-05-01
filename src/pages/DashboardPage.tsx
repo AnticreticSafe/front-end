@@ -8,8 +8,16 @@ interface DashboardPageProps {
 
 export function DashboardPage({ agreements, onViewDetails }: DashboardPageProps) {
   return (
-    <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-      <RoleDashboard agreements={agreements} onViewDetails={onViewDetails} />
+    <main
+      style={{
+        minHeight: '100vh',
+        background: '#221a4c',
+        padding: '96px 24px 64px',
+      }}
+    >
+      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        <RoleDashboard agreements={agreements} onViewDetails={onViewDetails} />
+      </div>
     </main>
   )
 }
