@@ -34,6 +34,12 @@ export function AgreementCard({ agreement, onViewDetails }: AgreementCardProps) 
       <p>
         <strong>Amount Registered:</strong> {agreement.amountRegistered ? 'Yes' : 'No'}
       </p>
+      <p>
+        <strong>asUSD Operation Hash:</strong>{' '}
+        {agreement.asUSDOperationHash
+          ? agreement.asUSDOperationHash
+          : 'Not available'}
+      </p>
       <Button variant="secondary" onClick={() => onViewDetails(agreement.id)}>
         View details
       </Button>
