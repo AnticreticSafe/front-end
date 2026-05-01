@@ -458,14 +458,36 @@ function StepActionPanel({ step, agreement, role, writer }: {
   if (step.index === 2) {
     const ownerApproved = agreement.approvals?.propertyOwnerApproved
     const occupantApproved = agreement.approvals?.occupantApproved
+
+    // Inline helper — shows which wallet needs to switch
+    function WaitingForOther({ pending, addr }: { pending: string; addr: string }) {
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '18px', color: '#d8fab1' }}>✓</span>
+            <p style={{ fontSize: '0.87rem', color: '#d8fab1' }}>You already signed. Waiting for {pending} to approve.</p>
+          </div>
+          <div style={{ background: 'rgba(107,96,242,0.12)', border: '1px solid rgba(107,96,242,0.3)', borderRadius: '10px', padding: '12px 16px' }}>
+            <p style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.35)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              👉 Switch MetaMask to the {pending} wallet
+            </p>
+            <p style={{ fontSize: '0.78rem', color: '#a5b4fc', fontFamily: 'monospace', wordBreak: 'break-all' }}>{addr}</p>
+            <p style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)', marginTop: '6px' }}>
+              Then come back and refresh — the Approve button will appear.
+            </p>
+          </div>
+        </div>
+      )
+    }
+
     if (isOwner) {
       return ownerApproved
-        ? <DoneAction message="You already approved. Waiting for Occupant to sign." />
+        ? <WaitingForOther pending="Occupant" addr={agreement.occupant} />
         : <SignAction label="Review the agreement terms and sign your approval on-chain." sublabel="Both parties must approve before the next step." buttonLabel="Approve Agreement" isPending={writer.isPending} onSubmit={() => writer.approveAgreement(numericId)} />
     }
     if (isOccupant) {
       return occupantApproved
-        ? <DoneAction message="You already approved. Waiting for Owner to sign." />
+        ? <WaitingForOther pending="Property Owner" addr={agreement.propertyOwner} />
         : <SignAction label="Review the agreement terms and sign your approval on-chain." sublabel="Both parties must approve before the next step." buttonLabel="Approve Agreement" isPending={writer.isPending} onSubmit={() => writer.approveAgreement(numericId)} />
     }
     return <WaitAction message="Waiting for both parties to sign their approval." />
