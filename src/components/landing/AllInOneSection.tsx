@@ -18,6 +18,51 @@ export function AllInOneSection() {
   return (
     <section style={{ backgroundColor: '#1a1340', borderTop: '1px solid rgba(107,96,242,0.2)' }}>
       <div className="mx-auto max-w-7xl px-6 py-24 text-center">
+
+        {/* Demo Video */}
+        <div
+          className="relative mx-auto mb-20 overflow-hidden rounded-2xl"
+          style={{
+            maxWidth: '900px',
+            border: '2px solid rgba(107,96,242,0.5)',
+            boxShadow: '0 0 60px rgba(107,96,242,0.25)',
+            background: '#0d0b26',
+          }}
+        >
+          {/* Banner label */}
+          <div
+            className="flex items-center justify-center gap-3 px-6 py-3"
+            style={{ borderBottom: '1px solid rgba(107,96,242,0.3)', background: 'rgba(107,96,242,0.12)' }}
+          >
+            <span className="text-base font-semibold tracking-wide" style={{ color: '#d8fab1' }}>
+              AnticreticSafe · Demo
+            </span>
+            <span
+              className="rounded-full px-3 py-0.5 text-xs font-bold uppercase tracking-widest"
+              style={{ background: '#6b60f2', color: '#fff' }}
+            >
+              Live on Arbitrum Sepolia
+            </span>
+          </div>
+
+          {/* 16:9 iframe */}
+          <div style={{ position: 'relative', paddingTop: '56.25%' }}>
+            <iframe
+              src="https://www.youtube.com/embed/bV2p5aG4Sxs"
+              title="AnticreticSafe Demo"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              style={{
+                position: 'absolute',
+                inset: 0,
+                width: '100%',
+                height: '100%',
+                border: 'none',
+              }}
+            />
+          </div>
+        </div>
+
         {/* Eyebrow */}
         <p
           className="mb-4 text-xs font-bold tracking-widest uppercase"
