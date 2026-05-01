@@ -6,7 +6,6 @@ import { useAgreementWriter } from '../hooks/useAgreementWriter'
 import { useNoxEncrypt } from '../hooks/useNoxEncrypt'
 import { useMintConfidentialAsUSD } from '../hooks/useMintConfidentialAsUSD'
 import { useRegisterConfidentialAmount } from '../hooks/useRegisterConfidentialAmount'
-import { normalizeBytes32 } from '../utils/bytes'
 import { formatAddress } from '../utils/formatAddress'
 import {
   ANTICRETIC_SAFE_ADDRESS,
@@ -100,6 +99,30 @@ const S = {
   } as React.CSSProperties,
 }
 
+// ── Contract error decoder ──────────────────────────────────────────────
+const CONTRACT_ERRORS: Record<string, string> = {
+  InvalidStatus:   'This action is not allowed at the current agreement stage',
+  NotParticipant:  'Your wallet is not a participant in this agreement',
+  OnlyPropertyOwner: 'Only the Property Owner can perform this action',
+  OnlyOccupant:    'Only the Occupant can perform this action',
+  AgreementDoesNotExist: 'Agreement ID not found on-chain',
+  InvalidHash:     'Invalid document hash — file may be empty',
+  InvalidAddress:  'Invalid wallet address',
+  InvalidDates:    'Invalid start/end dates',
+  AmountNotRegistered: 'Confidential amount has not been registered yet',
+  ViewerAlreadyGranted: 'Viewer access already granted',
+}
+
+function parseContractError(err: unknown): string {
+  const raw = err instanceof Error ? err.message : String(err)
+  // viem encodes custom errors as "Error: ErrorName()" or "reverted with ... ErrorName"
+  const match = raw.match(/\b(InvalidStatus|NotParticipant|OnlyPropertyOwner|OnlyOccupant|AgreementDoesNotExist|InvalidHash|InvalidAddress|InvalidDates|AmountNotRegistered|ViewerAlreadyGranted)\b/)
+  if (match) return CONTRACT_ERRORS[match[1]] ?? match[1]
+  if (raw.includes('User rejected') || raw.includes('user rejected')) return 'Transaction cancelled by user'
+  if (raw.includes('execution reverted')) return 'Transaction reverted — check the agreement status and your role'
+  return raw.slice(0, 150)
+}
+
 // ── Primitives ──────────────────────────────────────────────────────────
 function TxSuccess({ hash }: { hash: string }) {
   return (
@@ -129,33 +152,123 @@ function DoneAction({ message }: { message: string }) {
   )
 }
 
-// ── Hash input action ───────────────────────────────────────────────────
-function HashInputAction({ label, placeholder, buttonLabel, isPending, onSubmit }: {
-  label: string; placeholder: string; buttonLabel: string; isPending: boolean;
+// ── File hash action — upload a document, hash is computed automatically ─
+function HashInputAction({ label, buttonLabel, isPending, onSubmit }: {
+  label: string; placeholder?: string; buttonLabel: string; isPending: boolean;
   onSubmit: (hash: `0x${string}`) => Promise<{ txHash: string } | undefined>;
 }) {
-  const [value, setValue] = useState('')
+  const [fileName, setFileName] = useState('')
+  const [computedHash, setComputedHash] = useState<`0x${string}` | ''>('')
+  const [isHashing, setIsHashing] = useState(false)
+  const [dragging, setDragging] = useState(false)
   const [txHash, setTxHash] = useState('')
   const [err, setErr] = useState('')
+  const inputRef = React.useRef<HTMLInputElement>(null)
 
-  const handle = async () => {
+  const computeHash = async (file: File) => {
     setErr('')
+    setComputedHash('')
+    setIsHashing(true)
+    setFileName(file.name)
     try {
-      const h = normalizeBytes32(value)
-      const res = await onSubmit(h)
-      if (res) setTxHash(res.txHash)
-    } catch (e) {
-      setErr(e instanceof Error ? e.message.slice(0, 120) : 'Failed')
+      const buffer = await file.arrayBuffer()
+      const hashBuffer = await crypto.subtle.digest('SHA-256', buffer)
+      const hex = Array.from(new Uint8Array(hashBuffer))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('')
+      setComputedHash(`0x${hex}`)
+    } catch {
+      setErr('Failed to compute hash — try a different file')
+    } finally {
+      setIsHashing(false)
     }
   }
 
+  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) computeHash(file)
+  }
+
+  const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    setDragging(false)
+    const file = e.dataTransfer.files?.[0]
+    if (file) computeHash(file)
+  }
+
+  const handle = async () => {
+    setErr('')
+    if (!computedHash) return
+    try {
+      const res = await onSubmit(computedHash)
+      if (res) setTxHash(res.txHash)
+    } catch (e) {
+      setErr(parseContractError(e))
+    }
+  }
+
+  const dropZoneStyle: React.CSSProperties = {
+    border: `2px dashed ${dragging ? '#6b60f2' : 'rgba(107,96,242,0.35)'}`,
+    borderRadius: '12px',
+    padding: '28px 20px',
+    textAlign: 'center',
+    cursor: 'pointer',
+    background: dragging ? 'rgba(107,96,242,0.08)' : 'rgba(255,255,255,0.03)',
+    transition: 'all 0.2s',
+  }
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
       <label style={S.label}>{label}</label>
-      <input style={S.input} placeholder={placeholder} value={value} onChange={e => setValue(e.target.value)} />
-      <button type="button" style={S.btn('violet')} disabled={isPending || !value} onClick={handle}>
+
+      {/* Drop zone */}
+      <div
+        style={dropZoneStyle}
+        onClick={() => inputRef.current?.click()}
+        onDragOver={e => { e.preventDefault(); setDragging(true) }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={onDrop}
+      >
+        <input
+          ref={inputRef}
+          type="file"
+          accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.txt"
+          style={{ display: 'none' }}
+          onChange={onFileChange}
+        />
+        {isHashing ? (
+          <p style={{ color: '#a5b4fc', fontSize: '0.82rem' }}>⏳ Computing SHA-256…</p>
+        ) : fileName ? (
+          <div>
+            <p style={{ color: '#d8fab1', fontSize: '0.82rem', marginBottom: '4px' }}>📄 {fileName}</p>
+            <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.72rem' }}>Click or drag to replace</p>
+          </div>
+        ) : (
+          <div>
+            <p style={{ fontSize: '24px', marginBottom: '8px' }}>📂</p>
+            <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.85rem', marginBottom: '4px' }}>Click to select or drag & drop</p>
+            <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '0.72rem' }}>PDF, Word, image or text — hash is computed locally</p>
+          </div>
+        )}
+      </div>
+
+      {/* Computed hash display */}
+      {computedHash && (
+        <div style={{ ...S.txbox, background: 'rgba(216,250,177,0.06)', borderColor: 'rgba(216,250,177,0.2)' }}>
+          <p style={{ fontSize: '0.65rem', color: 'rgba(216,250,177,0.5)', marginBottom: '4px' }}>SHA-256 hash (computed locally)</p>
+          <p style={{ color: '#d8fab1', wordBreak: 'break-all', fontSize: '0.72rem' }}>{computedHash}</p>
+        </div>
+      )}
+
+      <button
+        type="button"
+        style={S.btn('violet')}
+        disabled={isPending || !computedHash || isHashing}
+        onClick={handle}
+      >
         {isPending ? 'Submitting…' : buttonLabel}
       </button>
+
       {err && <ErrorMsg msg={err} />}
       {txHash && <TxSuccess hash={txHash} />}
     </div>
@@ -176,7 +289,7 @@ function SignAction({ label, sublabel, buttonLabel, isPending, onSubmit }: {
       const res = await onSubmit()
       if (res) setTxHash(res.txHash)
     } catch (e) {
-      setErr(e instanceof Error ? e.message.slice(0, 120) : 'Failed')
+      setErr(parseContractError(e))
     }
   }
 
@@ -209,7 +322,7 @@ function NoxMintAction({ agreement }: { agreement: Agreement }) {
       const enc = await encryptUint256Amount({ amount: BigInt(amount), targetContract: ANTICRETIC_SAFE_USD_ADDRESS })
       setHandle(enc.encryptedAmountHandle)
       setProof(enc.inputProof)
-    } catch { setLocalErr('Nox encryption failed — check wallet & network') }
+    } catch (e) { setLocalErr('Nox encryption failed: ' + parseContractError(e)) }
   }
 
   const onMint = async () => {
@@ -218,7 +331,7 @@ function NoxMintAction({ agreement }: { agreement: Agreement }) {
     try {
       const res = await mintConfidentialAsUSD({ recipient: recipient as `0x${string}`, encryptedAmountHandle: handle, inputProof: proof })
       if (res?.txHash) localStorage.setItem(LAST_ASUSD_OPERATION_HASH_KEY, res.txHash)
-    } catch { setLocalErr('Mint failed') }
+    } catch (e) { setLocalErr(parseContractError(e)) }
   }
 
   return (
@@ -273,7 +386,7 @@ function NoxRegisterAction({ agreement }: { agreement: Agreement }) {
       const enc = await encryptUint256Amount({ amount: BigInt(amount), targetContract: ANTICRETIC_SAFE_ADDRESS })
       setHandle(enc.encryptedAmountHandle)
       setProof(enc.inputProof)
-    } catch { setErr('Nox encryption failed — check wallet & network') }
+    } catch (e) { setErr('Nox encryption failed: ' + parseContractError(e)) }
   }
 
   const onRegister = async () => {
@@ -283,7 +396,7 @@ function NoxRegisterAction({ agreement }: { agreement: Agreement }) {
       const numericId = agreement.id.replace(/\D/g, '')
       const res = await register({ agreementId: numericId, encryptedAmountHandle: handle, inputProof: proof, asUSDOperationHash: opHash as `0x${string}` })
       if (res?.txHash) setTxHash(res.txHash)
-    } catch { setErr('Registration failed') }
+    } catch (e) { setErr(parseContractError(e)) }
   }
 
   return (
@@ -334,8 +447,7 @@ function StepActionPanel({ step, agreement, role, writer }: {
   if (step.index === 1) {
     return (
       <HashInputAction
-        label="Paste the SHA-256 hash of the Title Report / Alodial document"
-        placeholder="0x1a2b3c… (64 hex chars)"
+        label="Upload the Title Report / Alodial document — the SHA-256 hash is computed automatically"
         buttonLabel="Upload Title Report Hash"
         isPending={writer.isPending}
         onSubmit={hash => writer.uploadTitleReport(numericId, hash)}
@@ -362,8 +474,7 @@ function StepActionPanel({ step, agreement, role, writer }: {
   if (step.index === 3) {
     return (
       <HashInputAction
-        label="Paste the SHA-256 hash of the signed contract (Minuta / Contrato de Anticrético)"
-        placeholder="0x1a2b3c… (64 hex chars)"
+        label="Upload the signed contract (Minuta / Contrato de Anticrético) — SHA-256 hash is computed automatically"
         buttonLabel="Upload Contract Hash"
         isPending={writer.isPending}
         onSubmit={hash => writer.uploadAgreementContract(numericId, hash)}
@@ -374,8 +485,7 @@ function StepActionPanel({ step, agreement, role, writer }: {
   if (step.index === 4) {
     return (
       <HashInputAction
-        label="Paste the SHA-256 hash of the Derechos Reales / Folio Real document"
-        placeholder="0x1a2b3c… (64 hex chars)"
+        label="Upload the Derechos Reales / Folio Real document — SHA-256 hash is computed automatically"
         buttonLabel="Upload Registry Proof Hash"
         isPending={writer.isPending}
         onSubmit={hash => writer.uploadPublicRegistry(numericId, hash)}
@@ -393,8 +503,7 @@ function StepActionPanel({ step, agreement, role, writer }: {
     if (isOwner) {
       return (
         <HashInputAction
-          label="Upload the Possession Delivery Act hash, then confirm the delivery on-chain"
-          placeholder="0x1a2b3c… (delivery act / acta de entrega)"
+          label="Upload the Possession Delivery Act (Acta de Entrega) — SHA-256 hash is computed automatically"
           buttonLabel="Confirm Delivery + Upload Hash"
           isPending={writer.isPending}
           onSubmit={hash => writer.confirmPossessionDelivery(numericId, hash)}
@@ -447,8 +556,7 @@ function StepActionPanel({ step, agreement, role, writer }: {
   if (step.index === 9) {
     return (
       <HashInputAction
-        label="Upload the cancellation / closure proof hash to finalize the agreement on-chain"
-        placeholder="0x1a2b3c… (cancellation deed / cancelación)"
+        label="Upload the cancellation / closure proof document (Cancelación) — SHA-256 hash is computed automatically"
         buttonLabel="Close Agreement"
         isPending={writer.isPending}
         onSubmit={hash => writer.closeAgreement(numericId, hash)}

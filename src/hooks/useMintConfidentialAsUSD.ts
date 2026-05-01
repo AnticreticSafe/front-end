@@ -1,9 +1,18 @@
 import { useState } from 'react'
-import { waitForTransactionReceipt } from 'wagmi/actions'
+import { waitForTransactionReceipt, getBlock } from 'wagmi/actions'
 import { useWriteContract } from 'wagmi'
 import { anticreticSafeUsdAbi } from '../abi/anticreticSafeUsdAbi'
 import { ANTICRETIC_SAFE_USD_ADDRESS } from '../config/contracts'
 import { wagmiConfig } from '../config/wagmi'
+
+async function getFees() {
+  const block = await getBlock(wagmiConfig, { blockTag: 'latest' })
+  const baseFee = block.baseFeePerGas ?? BigInt(1_000_000_000)
+  return {
+    maxFeePerGas: baseFee * 3n,
+    maxPriorityFeePerGas: 0n,
+  }
+}
 
 interface MintParams {
   recipient: `0x${string}`
@@ -30,11 +39,14 @@ export function useMintConfidentialAsUSD() {
     setReceipt(null)
     setIsPending(true)
     try {
+      const fees = await getFees()
       const hash = await writeContractAsync({
         address: ANTICRETIC_SAFE_USD_ADDRESS,
         abi: anticreticSafeUsdAbi,
         functionName: 'mint',
         args: [recipient, encryptedAmountHandle, inputProof],
+        gas: BigInt(8_000_000),
+        ...fees,
       })
       setTxHash(hash)
       setIsPending(false)

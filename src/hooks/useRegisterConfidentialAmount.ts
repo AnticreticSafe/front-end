@@ -1,9 +1,18 @@
 import { useState } from 'react'
-import { waitForTransactionReceipt } from 'wagmi/actions'
+import { waitForTransactionReceipt, getBlock } from 'wagmi/actions'
 import { useWriteContract } from 'wagmi'
 import { anticreticSafeAbi } from '../abi/anticreticSafeAbi'
 import { wagmiConfig } from '../config/wagmi'
 import { ANTICRETIC_SAFE_ADDRESS } from '../config/contracts'
+
+async function getFees() {
+  const block = await getBlock(wagmiConfig, { blockTag: 'latest' })
+  const baseFee = block.baseFeePerGas ?? BigInt(1_000_000_000)
+  return {
+    maxFeePerGas: baseFee * 3n,
+    maxPriorityFeePerGas: 0n,
+  }
+}
 
 interface RegisterParams {
   agreementId: string
@@ -24,11 +33,14 @@ export function useRegisterConfidentialAmount() {
   }: RegisterParams) => {
     setIsSubmitting(true)
     try {
+      const fees = await getFees()
       const hash = await writeContractAsync({
         address: ANTICRETIC_SAFE_ADDRESS,
         abi: anticreticSafeAbi,
         functionName: 'registerConfidentialAmount',
         args: [BigInt(agreementId), encryptedAmountHandle, inputProof, asUSDOperationHash],
+        gas: BigInt(8_000_000),
+        ...fees,
       })
       const receipt = await waitForTransactionReceipt(wagmiConfig, {
         hash,

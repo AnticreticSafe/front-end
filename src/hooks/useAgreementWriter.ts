@@ -1,9 +1,18 @@
 import { useState } from 'react'
 import { useWriteContract } from 'wagmi'
-import { waitForTransactionReceipt } from 'wagmi/actions'
+import { getBlock, waitForTransactionReceipt } from 'wagmi/actions'
 import { anticreticSafeAbi } from '../abi/anticreticSafeAbi'
 import { wagmiConfig } from '../config/wagmi'
 import { ANTICRETIC_SAFE_ADDRESS } from '../config/contracts'
+
+async function getFees() {
+  const block = await getBlock(wagmiConfig, { blockTag: 'latest' })
+  const baseFee = block.baseFeePerGas ?? BigInt(1_000_000_000)
+  return {
+    maxFeePerGas: baseFee * 3n,
+    maxPriorityFeePerGas: 0n, // Arbitrum L2 — no tip needed
+  }
+}
 
 export function useAgreementWriter() {
   const { writeContractAsync } = useWriteContract()
@@ -14,17 +23,21 @@ export function useAgreementWriter() {
     setError('')
     setIsPending(true)
     try {
+      const fees = await getFees()
       const hash = await writeContractAsync({
         address: ANTICRETIC_SAFE_ADDRESS,
         abi: anticreticSafeAbi,
         functionName,
         args,
+        gas: BigInt(8_000_000),
+        ...fees,
       } as Parameters<typeof writeContractAsync>[0])
       const receipt = await waitForTransactionReceipt(wagmiConfig, { hash })
       return { txHash: hash, receipt }
     } catch (err) {
-      const msg = err instanceof Error ? err.message.slice(0, 160) : 'Transaction failed'
-      setError(msg)
+      const raw = err instanceof Error ? err.message : String(err)
+      // Preserve the full message so the UI can parse custom contract errors
+      setError(raw.slice(0, 400))
       throw err
     } finally {
       setIsPending(false)
