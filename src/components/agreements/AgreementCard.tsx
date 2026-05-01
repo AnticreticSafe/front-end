@@ -23,7 +23,10 @@ export function AgreementCard({ agreement, onViewDetails }: AgreementCardProps) 
         <strong>Occupant:</strong> {agreement.occupant}
       </p>
       <p>
-        <strong>Start Date:</strong> {formatDate(agreement.startDate)}
+        <strong>Start Date:</strong>{' '}
+        {agreement.startDate && agreement.startDate !== '0'
+          ? formatDate(agreement.startDate)
+          : new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' })}
       </p>
       <p>
         <strong>End Date:</strong> {formatDate(agreement.endDate)}

@@ -34,7 +34,7 @@ export function CreateAgreementPage({ onCreate }: CreateAgreementPageProps) {
 
   const [occupantWallet, setOccupantWallet] = useState('')
   const [propertyDescription, setPropertyDescription] = useState('')
-  const [startDate, setStartDate] = useState('')
+  const [startDate, setStartDate] = useState(() => new Date().toISOString().slice(0, 10))
   const [endDate, setEndDate] = useState('')
   const [txHash, setTxHash] = useState('')
   const [formErr, setFormErr] = useState('')
